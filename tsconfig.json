@@ -1,13 +1,12 @@
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist"
-  },
-  "include": ["netlify/**/*"]
-}
+[build]
+  command = "npm run build"
+  functions = "dist/netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/mcp"
+  to = "/.netlify/functions/mcp"
+  status = 200
+  force = true
