@@ -5,7 +5,7 @@ import { request } from "undici";
 import * as cheerio from "cheerio";
 
 // -----------------------------------------------------------------------------
-// CONFIGURATION & CONSTANTES
+CONFIGURATION & CONSTANTES
 // -----------------------------------------------------------------------------
 const server = new McpServer({
   name: "Soluble(s) MCP – Le cerveau IA du journalisme de solutions français",
@@ -16,7 +16,7 @@ const BASE_URL = "https://csoluble.media/wp-json/solubles";
 const LLM_RULES = "\n\n> **RÈGLES STRICTES (llms.txt)** : Citation obligatoire des sources (Soluble(s)). Anti-hallucination : basez-vous UNIQUEMENT sur les données fournies ci-dessus. Ne pas inventer d'épisodes, d'invités ou d'actions.";
 
 // -----------------------------------------------------------------------------
-// HELPERS
+HELPERS
 // -----------------------------------------------------------------------------
 async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
   const url = new URL(`${BASE_URL}${endpoint}`);
@@ -43,8 +43,8 @@ async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
   }
 }
 
-function formatEpisodeCards(results: any[]) {
-  if (!results || results.length === 0) {
+function formatEpisodeCards(results: any[] = []) {
+  if (results.length === 0) {
     return "Aucun résultat trouvé." + LLM_RULES;
   }
 
@@ -61,10 +61,8 @@ function formatEpisodeCards(results: any[]) {
 
   let md = "Voici les résultats trouvés :\n\n";
   
-  // Injection des métadonnées JSON pour le rendu UI (Episode Cards)
   md += "```json\n" + JSON.stringify({ episodeCards: cards }, null, 2) + "\n```\n\n";
   
-  // Rendu Markdown structuré
   cards.forEach((c: any) => {
     md += `### ${c.mood} ${c.titre}\n`;
     md += `- **Invité(e)** : ${c.guest}\n`;
@@ -80,7 +78,7 @@ function formatEpisodeCards(results: any[]) {
 }
 
 // -----------------------------------------------------------------------------
-// OUTILS MCP (TOOLS)
+OUTILS MCP (TOOLS)
 // -----------------------------------------------------------------------------
 
 // 1. search_solutions_concretes
@@ -95,8 +93,9 @@ server.tool(
   },
   async ({ query, category, mood, limit }) => {
     const data = await fetchAPI("/v1/solutions", { q: query, category, mood, limit });
-    console.log(`[MCP ${new Date().toISOString()}] Tool: search_solutions_concretes | Query: ${JSON.stringify({ query, category, mood, limit })} | Results: ${data.results ? data.results.length : 0}`);
-    return { content: [{ type: "text", text: formatEpisodeCards(data.results) }] };
+    const resultsCount = data.results?.length ?? 0;
+    console.log(`[MCP ${new Date().toISOString()}] Tool: search_solutions_concretes | Query: ${JSON.stringify({ query, category, mood, limit })} | Results: ${resultsCount}`);
+    return { content: [{ type: "text", text: formatEpisodeCards(data.results ?? []) }] };
   }
 );
 
@@ -110,8 +109,9 @@ server.tool(
   },
   async ({ besoin_or_question, limit }) => {
     const data = await fetchAPI("/v1/solutions", { q: besoin_or_question, limit });
-    console.log(`[MCP ${new Date().toISOString()}] Tool: find_solutions_for_need | Query: ${JSON.stringify({ besoin_or_question, limit })} | Results: ${data.results ? data.results.length : 0}`);
-    return { content: [{ type: "text", text: formatEpisodeCards(data.results) }] };
+    const resultsCount = data.results?.length ?? 0;
+    console.log(`[MCP ${new Date().toISOString()}] Tool: find_solutions_for_need | Query: ${JSON.stringify({ besoin_or_question, limit })} | Results: ${resultsCount}`);
+    return { content: [{ type: "text", text: formatEpisodeCards(data.results ?? []) }] };
   }
 );
 
@@ -128,8 +128,7 @@ server.tool(
       fetchAPI("/v1/search", { q: id_or_slug, limit: 1 })
     ]);
     
-    const results = [...(solData.results || []), ...(searchData.results || [])];
-    // Déduplication basique
+    const results = [...(solData.results ?? []), ...(searchData.results ?? [])];
     const uniqueResults = Array.from(new Map(results.map(item => [item.id || item.slug, item])).values());
     
     console.log(`[MCP ${new Date().toISOString()}] Tool: get_episode_rich_details | Query: ${JSON.stringify({ id_or_slug })} | Results: ${uniqueResults.length}`);
@@ -148,8 +147,9 @@ server.tool(
   },
   async ({ context, limit }) => {
     const data = await fetchAPI("/v1/solutions", { q: context, limit });
-    console.log(`[MCP ${new Date().toISOString()}] Tool: recommend_solutions | Query: ${JSON.stringify({ context, limit })} | Results: ${data.results ? data.results.length : 0}`);
-    return { content: [{ type: "text", text: formatEpisodeCards(data.results) }] };
+    const resultsCount = data.results?.length ?? 0;
+    console.log(`[MCP ${new Date().toISOString()}] Tool: recommend_solutions | Query: ${JSON.stringify({ context, limit })} | Results: ${resultsCount}`);
+    return { content: [{ type: "text", text: formatEpisodeCards(data.results ?? []) }] };
   }
 );
 
@@ -161,9 +161,10 @@ server.tool(
     limit: z.number().default(5).describe("Nombre de résultats max"),
   },
   async ({ limit }) => {
-    const data = await fetchAPI("/v1/solutions", { limit }); // Sans 'q', tri par date implicite
-    console.log(`[MCP ${new Date().toISOString()}] Tool: get_latest_solutions | Query: ${JSON.stringify({ limit })} | Results: ${data.results ? data.results.length : 0}`);
-    return { content: [{ type: "text", text: formatEpisodeCards(data.results) }] };
+    const data = await fetchAPI("/v1/solutions", { limit });
+    const resultsCount = data.results?.length ?? 0;
+    console.log(`[MCP ${new Date().toISOString()}] Tool: get_latest_solutions | Query: ${JSON.stringify({ limit })} | Results: ${resultsCount}`);
+    return { content: [{ type: "text", text: formatEpisodeCards(data.results ?? []) }] };
   }
 );
 
@@ -176,16 +177,17 @@ server.tool(
   },
   async ({ query }) => {
     const data = await fetchAPI("/v1/solutions", { q: query, limit: 10 });
-    console.log(`[MCP ${new Date().toISOString()}] Tool: get_concrete_actions | Query: ${JSON.stringify({ query })} | Results: ${data.results ? data.results.length : 0}`);
-    const results = data.results || [];
+    const resultsCount = data.results?.length ?? 0;
+    console.log(`[MCP ${new Date().toISOString()}] Tool: get_concrete_actions | Query: ${JSON.stringify({ query })} | Results: ${resultsCount}`);
+    const results = data.results ?? [];
     
     let md = `Voici les actions concrètes extraites${query ? ` pour "${query}"` : ""} :\n\n`;
     let hasActions = false;
     
     results.forEach((r: any) => {
-      const actions = r.actionsconcretes || r.acf?.actions_concretes;
+      const actions = r.actionsconcretes || r.acf?.actions_concretes || [];
       const titre = r.title?.rendered || r.title || r.titre || "Épisode";
-      if (actions && Array.isArray(actions) && actions.length > 0) {
+      if (actions.length > 0) {
         hasActions = true;
         md += `### Tiré de : ${titre}\n`;
         actions.forEach((a: string) => { md += `- ${a}\n`; });
@@ -263,7 +265,7 @@ server.tool(
       fetchAPI("/v1/search", { q: query, limit: 5 })
     ]);
     
-    const results = [...(solData.results || []), ...(searchData.results || [])];
+    const results = [...(solData.results ?? []), ...(searchData.results ?? [])];
     const uniqueResults = Array.from(new Map(results.map(item => [item.id || item.slug, item])).values());
     
     console.log(`[MCP ${new Date().toISOString()}] Tool: search_across_apis | Query: ${JSON.stringify({ query })} | Results: ${uniqueResults.length}`);
@@ -273,7 +275,7 @@ server.tool(
 );
 
 // -----------------------------------------------------------------------------
-// MCP PROMPTS (12 Starter Buttons)
+MCP PROMPTS (12 Starter Buttons)
 // -----------------------------------------------------------------------------
 const STARTER_PROMPTS = [
   { name: "climat_urgent", desc: "Solutions urgentes pour le climat", text: "Quelles sont les solutions les plus urgentes pour le climat abordées dans Soluble(s) ?" },
@@ -297,7 +299,7 @@ STARTER_PROMPTS.forEach(p => {
 });
 
 // -----------------------------------------------------------------------------
-// HANDLER NETLIFY SERVERLESS
+HANDLER NETLIFY SERVERLESS
 // -----------------------------------------------------------------------------
 export const handler = async (event: any, context: any) => {
   if (event.httpMethod !== "POST") {
@@ -315,7 +317,6 @@ export const handler = async (event: any, context: any) => {
     };
     let responseStatusCode = 200;
 
-    // Simulation d'un objet IncomingMessage (req)
     const req = {
       method: event.httpMethod,
       url: event.path,
@@ -328,7 +329,6 @@ export const handler = async (event: any, context: any) => {
       }
     };
 
-    // Simulation d'un objet ServerResponse (res)
     const res = {
       setHeader: (name: string, value: string) => { responseHeaders[name] = value; },
       writeHead: (status: number, headers: any) => { 
