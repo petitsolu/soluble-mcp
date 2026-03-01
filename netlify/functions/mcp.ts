@@ -27,9 +27,11 @@ async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
       return { total: 0, results: [] };
     }
     const data = await body.json();
-    if (Array.isArray(data)) return { total: data.length, results: data };
-    if (data && data.results) return data;
-    return { total: 1, results: [data] };
+    const safeData = data || {};
+    return {
+      total: safeData.total || 0,
+      results: Array.isArray(safeData.results) ? safeData.results : (Array.isArray(data) ? data : [])
+    };
   } catch (error) {
     console.error(`Fetch error on ${url.toString()}:`, error);
     return { total: 0, results: [] };
@@ -81,9 +83,9 @@ server.tool(
   },
   async ({ query, category, mood, limit }) => {
     const data = await fetchAPI("/v1/solutions", { q: query, category, mood, limit });
-    const resultsCount = data.results?.length ?? 0;
+    const resultsCount = data.results.length;
     console.log(`[MCP ${new Date().toISOString()}] Tool: search_solutions_concretes | Query: ${JSON.stringify({ query, category, mood, limit })} | Results: ${resultsCount}`);
-    return { content: [{ type: "text", text: formatEpisodeCards(data.results ?? []) }] };
+    return { content: [{ type: "text", text: formatEpisodeCards(data.results) }] };
   }
 );
 
@@ -97,9 +99,9 @@ server.tool(
   },
   async ({ besoin_or_question, limit }) => {
     const data = await fetchAPI("/v1/solutions", { q: besoin_or_question, limit });
-    const resultsCount = data.results?.length ?? 0;
+    const resultsCount = data.results.length;
     console.log(`[MCP ${new Date().toISOString()}] Tool: find_solutions_for_need | Query: ${JSON.stringify({ besoin_or_question, limit })} | Results: ${resultsCount}`);
-    return { content: [{ type: "text", text: formatEpisodeCards(data.results ?? []) }] };
+    return { content: [{ type: "text", text: formatEpisodeCards(data.results) }] };
   }
 );
 
@@ -116,7 +118,7 @@ server.tool(
       fetchAPI("/v1/search", { q: id_or_slug, limit: 1 })
     ]);
     
-    const results = [...(solData.results ?? []), ...(searchData.results ?? [])];
+    const results = [...solData.results, ...searchData.results];
     const uniqueResults = Array.from(new Map(results.map(item => [item.id || item.slug, item])).values());
     
     console.log(`[MCP ${new Date().toISOString()}] Tool: get_episode_rich_details | Query: ${JSON.stringify({ id_or_slug })} | Results: ${uniqueResults.length}`);
@@ -135,9 +137,9 @@ server.tool(
   },
   async ({ context, limit }) => {
     const data = await fetchAPI("/v1/solutions", { q: context, limit });
-    const resultsCount = data.results?.length ?? 0;
+    const resultsCount = data.results.length;
     console.log(`[MCP ${new Date().toISOString()}] Tool: recommend_solutions | Query: ${JSON.stringify({ context, limit })} | Results: ${resultsCount}`);
-    return { content: [{ type: "text", text: formatEpisodeCards(data.results ?? []) }] };
+    return { content: [{ type: "text", text: formatEpisodeCards(data.results) }] };
   }
 );
 
@@ -150,9 +152,9 @@ server.tool(
   },
   async ({ limit }) => {
     const data = await fetchAPI("/v1/solutions", { limit });
-    const resultsCount = data.results?.length ?? 0;
+    const resultsCount = data.results.length;
     console.log(`[MCP ${new Date().toISOString()}] Tool: get_latest_solutions | Query: ${JSON.stringify({ limit })} | Results: ${resultsCount}`);
-    return { content: [{ type: "text", text: formatEpisodeCards(data.results ?? []) }] };
+    return { content: [{ type: "text", text: formatEpisodeCards(data.results) }] };
   }
 );
 
@@ -165,9 +167,9 @@ server.tool(
   },
   async ({ query }) => {
     const data = await fetchAPI("/v1/solutions", { q: query, limit: 10 });
-    const resultsCount = data.results?.length ?? 0;
+    const resultsCount = data.results.length;
     console.log(`[MCP ${new Date().toISOString()}] Tool: get_concrete_actions | Query: ${JSON.stringify({ query })} | Results: ${resultsCount}`);
-    const results = data.results ?? [];
+    const results = data.results;
     
     let md = `Voici les actions concrètes extraites${query ? ` pour "${query}"` : ""} :\n\n`;
     let hasActions = false;
@@ -253,7 +255,7 @@ server.tool(
       fetchAPI("/v1/search", { q: query, limit: 5 })
     ]);
     
-    const results = [...(solData.results ?? []), ...(searchData.results ?? [])];
+    const results = [...solData.results, ...searchData.results];
     const uniqueResults = Array.from(new Map(results.map(item => [item.id || item.slug, item])).values());
     
     console.log(`[MCP ${new Date().toISOString()}] Tool: search_across_apis | Query: ${JSON.stringify({ query })} | Results: ${uniqueResults.length}`);
