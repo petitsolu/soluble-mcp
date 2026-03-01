@@ -38,7 +38,16 @@ function formatEpisodeCards(results: any[]) {
     md += `### ${c.mood} ${c.titre}\n`;
     md += `- **Invité(e)** : ${c.guest}\n`;
     md += `- **Résumé** : ${c.resumeia2lignes.trim()}\n`;
-    if (c.actionsconcretes?.length > 0) md += `- **Actions concrètes** : ${c.actionsconcretes.join(" | ")}\n`;
+    
+    // CORRECTION ICI : On gère le cas où c'est un texte et pas une liste
+    if (c.actionsconcretes) {
+      if (Array.isArray(c.actionsconcretes) && c.actionsconcretes.length > 0) {
+        md += `- **Actions concrètes** : ${c.actionsconcretes.join(" | ")}\n`;
+      } else if (typeof c.actionsconcretes === "string" && c.actionsconcretes.trim() !== "") {
+        md += `- **Actions concrètes** : ${c.actionsconcretes}\n`;
+      }
+    }
+
     if (c.spotify) md += `- [Écouter sur Spotify](${c.spotify})\n`;
     md += "\n";
   });
@@ -143,11 +152,19 @@ async function callTool(name: string, args: any): Promise<string> {
       results.forEach((r: any) => {
         const actions = r.actionsconcretes || r.acf?.actions_concretes;
         const titre = r.title?.rendered || r.title || r.titre || "Épisode";
-        if (actions?.length > 0) {
-          hasActions = true;
-          md += `### Tiré de : ${titre}\n`;
-          actions.forEach((a: string) => { md += `- ${a}\n`; });
-          md += "\n";
+        
+        // CORRECTION ICI AUSSI
+        if (actions) {
+          if (Array.isArray(actions) && actions.length > 0) {
+            hasActions = true;
+            md += `### Tiré de : ${titre}\n`;
+            actions.forEach((a: string) => { md += `- ${a}\n`; });
+            md += "\n";
+          } else if (typeof actions === "string" && actions.trim() !== "") {
+            hasActions = true;
+            md += `### Tiré de : ${titre}\n`;
+            md += `- ${actions}\n\n`;
+          }
         }
       });
       if (!hasActions) md = "Aucune action concrète trouvée.\n\n";
