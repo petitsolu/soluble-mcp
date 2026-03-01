@@ -1,13 +1,10 @@
 {
   "name": "soluble-mcp",
   "version": "1.0.0",
+  "type": "module",
   "description": "Serveur MCP pour Soluble(s)",
-  "main": "index.js",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@netlify/functions": "^2.0.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0"
   }
 }
