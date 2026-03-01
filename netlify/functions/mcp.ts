@@ -1,5 +1,11 @@
 const BASE_URL = "https://csoluble.media/wp-json/solubles";
-const LLM_RULES = "\n\n> **RÈGLES STRICTES (llms.txt)** : Citation obligatoire des sources (Soluble(s)). Anti-hallucination : basez-vous UNIQUEMENT sur les données fournies ci-dessus. Ne pas inventer d'épisodes, d'invités ou d'actions.";
+const LLM_RULES = "\n\n> **RÈGLES DE RÉPONSE** : Citez Soluble(s). Pour approfondir, proposez TOUJOURS les versions Markdown (IA) en utilisant les liens dédiés. Ne jamais inventer de données.";
+
+// Fonction pour garantir une URL propre finissant par /
+const ensureTrailingSlash = (url: string) => {
+  if (!url) return "";
+  return url.replace(/\/$/, "") + "/";
+};
 
 async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
   const url = new URL(`${BASE_URL}${endpoint}`);
@@ -25,16 +31,22 @@ async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
 function formatEpisodeCards(results: any[]) {
   if (!results || results.length === 0) return "Aucun résultat trouvé." + LLM_RULES;
   
-  const cards = results.map((r: any) => ({
-    id: r.id || r.slug || "N/A",
-    titre: r.title || r.seo_title_yoast || "Titre inconnu",
-    guest: r.guest || r.invite || "Non spécifié",
-    mood: r.mood || "💡",
-    resume: r.resumeia2lignes || r.description || "",
-    actions: r.actionsconcretes || [],
-    link_page: r.link_page || "",
-    link_spotify: r.link_spotify || r.link_spotifylink_apple || "" 
-  }));
+  const cards = results.map((r: any) => {
+    const basePage = ensureTrailingSlash(r.link_page);
+    return {
+      titre: r.title || r.seo_title_yoast || "Titre inconnu",
+      guest: r.guest || r.invite || "Non spécifié",
+      mood: r.mood || "💡",
+      resume: r.resumeia2lignes || r.description || "",
+      actions: r.actionsconcretes || [],
+      // Utilisation de tes colonnes CSV avec gestion des slashs
+      link_page: basePage,
+      link_markdown: basePage ? basePage + "md/" : "",
+      link_transcription: r.link_transcription ? ensureTrailingSlash(r.link_transcription) + "md/" : "",
+      link_summary: r.link_summary ? ensureTrailingSlash(r.link_summary) + "md/" : "",
+      link_spotify: r.link_spotify || ""
+    };
+  });
 
   let md = "Voici les résultats trouvés :\n\n";
   cards.forEach((c: any) => {
@@ -47,7 +59,12 @@ function formatEpisodeCards(results: any[]) {
       md += `- **Actions concrètes** : ${actionsText}\n`;
     }
     
-    if (c.link_page) md += `- [🔗 Fiche épisode complète](${c.link_page})\n`;
+    if (c.link_page) md += `- [🔗 Fiche épisode](${c.link_page})\n`;
+    if (c.link_markdown) md += `- [📄 Version Markdown (Analyse IA)](${c.link_markdown})\n`;
+    
+    // Ajout des liens spécifiques si présents dans tes colonnes
+    if (c.link_transcription) md += `- [📝 Transcription complète (IA)](${c.link_transcription})\n`;
+    if (c.link_summary) md += `- [📋 Synthèse détaillée (IA)](${c.link_summary})\n`;
     if (c.link_spotify) md += `- [Écouter sur Spotify](${c.link_spotify})\n`;
     md += "\n";
   });
@@ -56,56 +73,36 @@ function formatEpisodeCards(results: any[]) {
 
 const TOOLS = [
   {
-    name: "search_solutions_concretes",
-    description: "Trouver des gestes pratiques et des solutions écologiques issus des podcasts Soluble(s).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: { type: "string", description: "Mots-clés de recherche" },
-        limit: { type: "number", description: "Nombre de résultats max", default: 5 }
-      },
-      required: ["query"]
-    }
-  },
-  {
     name: "find_solutions_for_need",
-    description: "Trouver des épisodes Soluble(s) répondant à un besoin spécifique (ex: biodiversité).",
+    description: "Trouver des solutions par besoin. Note : utilisez les liens /md/ pour une analyse textuelle profonde.",
     inputSchema: {
       type: "object",
       properties: {
-        besoin_or_question: { type: "string", description: "Le besoin ou la question" }
+        besoin_or_question: { type: "string", description: "Le besoin" }
       },
       required: ["besoin_or_question"]
     }
   },
   {
     name: "get_latest_solutions",
-    description: "Récupérer les dernières solutions publiées sur Soluble(s).",
+    description: "Récupérer les dernières solutions publiées.",
     inputSchema: {
       type: "object",
-      properties: {
-        limit: { type: "number", description: "Nombre de résultats max", default: 5 }
-      }
+      properties: { limit: { type: "number", default: 5 } }
     }
   },
   {
     name: "get_concrete_actions",
-    description: "Extraire uniquement la liste des actions concrètes des épisodes.",
+    description: "Extraire la liste des actions concrètes uniquement.",
     inputSchema: {
       type: "object",
-      properties: {
-        query: { type: "string", description: "Mots-clés optionnels" }
-      }
+      properties: { query: { type: "string" } }
     }
   }
 ];
 
 async function callTool(name: string, args: any): Promise<string> {
   switch (name) {
-    case "search_solutions_concretes": {
-      const data = await fetchAPI("/v1/solutions", { q: args.query, limit: args.limit ?? 5 });
-      return formatEpisodeCards(data.results);
-    }
     case "find_solutions_for_need": {
       const data = await fetchAPI("/v1/solutions", { q: args.besoin_or_question, limit: 5 });
       return formatEpisodeCards(data.results);
@@ -120,19 +117,19 @@ async function callTool(name: string, args: any): Promise<string> {
       let md = `Voici les actions concrètes extraites :\n\n`;
       let hasActions = false;
       results.forEach((r: any) => {
-        const actions = r.actionsconcretes || r.acf?.actions_concretes;
-        const titre = r.title || r.titre || "Épisode";
-        const link = r.link_page || "";
+        const actions = r.actionsconcretes;
+        const titre = r.title || "Épisode";
+        const linkMd = r.link_page ? ensureTrailingSlash(r.link_page) + "md/" : "";
         if (actions && (Array.isArray(actions) ? actions.length > 0 : actions)) {
           hasActions = true;
-          md += `### Tiré de : ${titre}\n`;
-          const actionsList = Array.isArray(actions) ? actions : [actions];
-          actionsList.forEach((a: string) => { md += `- ✅ ${a}\n`; });
-          if (link) md += `- [Lien vers l'épisode](${link})\n`;
+          md += `### ${titre}\n`;
+          const list = Array.isArray(actions) ? actions : [actions];
+          list.forEach((a: string) => { md += `- ✅ ${a}\n`; });
+          if (linkMd) md += `- [Lire la source Markdown](${linkMd})\n`;
           md += "\n";
         }
       });
-      return hasActions ? md + LLM_RULES : "Aucune action trouvée.\n\n" + LLM_RULES;
+      return hasActions ? md + LLM_RULES : "Aucune action trouvée." + LLM_RULES;
     }
     default:
       throw new Error(`Tool not found: ${name}`);
@@ -154,7 +151,7 @@ export const handler = async (event: any) => {
   const err = (code: number, message: string) => ({ statusCode: 200, headers: { ...corsHeaders, "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } }) });
   try {
     switch (method) {
-      case "initialize": return ok({ protocolVersion: "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "Soluble(s) MCP", version: "1.1.0" } });
+      case "initialize": return ok({ protocolVersion: "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "Soluble(s) MCP", version: "1.1.2" } });
       case "tools/list": return ok({ tools: TOOLS });
       case "tools/call": return ok({ content: [{ type: "text", text: await callTool(params.name, params.arguments || {}) }] });
       case "ping": return ok({});
