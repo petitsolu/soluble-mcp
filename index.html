@@ -12,12 +12,13 @@
       --brand-red: #E61E25;
       --border-color: #121212;
       --beige: #F5EFE6;
+      --green: #00E676;
     }
 
     body {
       background-color: var(--bg-color);
       color: var(--text-color);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       margin: 0;
       padding: 40px 20px;
       line-height: 1.6;
@@ -48,17 +49,13 @@
     .dot {
       height: 8px;
       width: 8px;
-      background-color: #00E676;
+      background-color: var(--green);
       border-radius: 50%;
-      box-shadow: 0 0 8px #00E676;
+      box-shadow: 0 0 8px var(--green);
       animation: pulse 2s infinite;
     }
 
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
     /* URL BOX */
     .stat-item {
@@ -85,21 +82,31 @@
 
     .card-btn {
       display: inline-block;
-      padding: 12px 24px;
+      padding: 10px 20px;
       background: var(--brand-red);
       color: white;
-      border: 3px solid var(--border-color);
-      border-radius: 8px;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
       font-weight: 800;
       text-decoration: none;
       text-transform: uppercase;
-      box-shadow: 4px 4px 0 var(--border-color);
+      font-size: 0.8rem;
+      box-shadow: 3px 3px 0 var(--border-color);
       cursor: pointer;
       transition: all 0.2s;
     }
 
-    .card-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--border-color); }
-    .card-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0 var(--border-color); }
+    .card-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--border-color); }
+    .card-btn:active { transform: translate(1px, 1px); box-shadow: 0px 0px 0 var(--border-color); }
+
+    /* INFO BOX */
+    .info-box {
+      background: #E3F2FD;
+      border: 2px solid var(--border-color);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
 
     /* CODE BLOCKS */
     pre {
@@ -110,9 +117,10 @@
       overflow-x: auto;
       font-size: 0.85rem;
       border-left: 5px solid var(--brand-red);
+      margin: 15px 0;
     }
 
-    .step { margin-bottom: 30px; }
+    .step { margin-bottom: 50px; }
     h2 { text-transform: uppercase; font-weight: 900; border-bottom: 3px solid var(--text-color); display: inline-block; padding-bottom: 5px; margin-top: 40px; }
     h3 { font-weight: 800; margin-bottom: 10px; }
 
@@ -129,33 +137,42 @@
     <div class="header-kicker">Intelligence Artificielle • Journalisme de solutions</div>
     <h1 class="pilier-title">Connectez Soluble(s) à votre IA</h1>
     <p class="pilier-subtitle">
-      Interrogez directement notre base de solutions concrètes et nos épisodes de podcast depuis <strong>Claude</strong>, <strong>Cursor</strong> ou <strong>Windsurf</strong>.
+      Utilisez directement notre base de solutions concrètes et nos épisodes de podcast depuis vos outils d'IA préférés.
     </p>
   </header>
 
+  <div class="info-box">
+    <strong>💡 Note pour les auditeurs :</strong> Ce connecteur fonctionne actuellement avec les applications installées sur votre ordinateur (Desktop). Pour une utilisation directe sur le site Claude.ai, nous attendons la validation officielle d'Anthropic.
+  </div>
+
   <section class="stat-item">
-    <span class="header-kicker">URL du serveur distant (SSE)</span>
+    <span class="header-kicker">URL du serveur (Transport SSE)</span>
     <div class="url-display">
       <span id="mcp-url">https://mcp.csoluble.media/api/mcp</span>
     </div>
-    <button class="card-btn" onclick="copyUrl()">Copier l'URL officielle</button>
+    <button class="card-btn" onclick="copyContent('mcp-url', this)">Copier l'URL officielle</button>
   </section>
 
   <section>
     <h2>🚀 Guide d'installation</h2>
     
     <div class="step">
-      <h3>1. Cursor / Windsurf</h3>
-      <p>Allez dans <strong>Settings > Tools > MCP</strong>. Ajoutez un nouveau serveur avec ces paramètres :<br>
-         • Type : <strong>SSE</strong><br>
-         • URL : <code>https://mcp.csoluble.media/api/mcp</code></p>
+      <h3>1. Cursor & Windsurf (Utilisateurs avancés)</h3>
+      <p>Ouvrez les réglages MCP et ajoutez un serveur de type <strong>SSE</strong> avec ce bloc JSON :</p>
+      <pre id="json-cursor">{
+  "mcpServers": {
+    "solubles": {
+      "url": "https://mcp.csoluble.media/api/mcp"
+    }
+  }
+}</pre>
+      <button class="card-btn" onclick="copyContent('json-cursor', this)">Copier le JSON Cursor</button>
     </div>
 
     <div class="step">
-      <h3>2. Claude Desktop</h3>
-      <p>Ajoutez ce bloc à votre fichier <code>claude_desktop_config.json</code> :</p>
-      <pre>
-"mcpServers": {
+      <h3>2. Claude Desktop (Mac / Windows)</h3>
+      <p>Ajoutez ce bloc à votre fichier <code>claude_desktop_config.json</code> pour activer Soluble(s) dans votre application :</p>
+      <pre id="json-claude">"mcpServers": {
   "solubles": {
     "command": "npx",
     "args": [
@@ -167,6 +184,7 @@
     ]
   }
 }</pre>
+      <button class="card-btn" onclick="copyContent('json-claude', this)">Copier le JSON Claude</button>
     </div>
   </section>
 
@@ -176,12 +194,17 @@
 </div>
 
 <script>
-  function copyUrl() {
-    const url = document.getElementById('mcp-url').innerText;
-    navigator.clipboard.writeText(url);
-    const btn = document.querySelector('.card-btn');
-    btn.innerText = "Copié !";
-    setTimeout(() => { btn.innerText = "Copier l'URL officielle"; }, 2000);
+  function copyContent(elementId, btn) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btn.innerText;
+      btn.innerText = "Copié !";
+      btn.style.background = "#00E676";
+      setTimeout(() => {
+        btn.innerText = originalText;
+        btn.style.background = "";
+      }, 2000);
+    });
   }
 </script>
 
