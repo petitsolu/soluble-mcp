@@ -22,27 +22,34 @@ async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
   }
 }
 
+// CHIRURGIE DE PRÉCISION ICI : On utilise tes vrais noms de colonnes sans casser la structure
 function formatEpisodeCards(results: any[]) {
   if (!results || results.length === 0) return "Aucun résultat trouvé." + LLM_RULES;
+  
   const cards = results.map((r: any) => ({
-    id: r.id || r.slug || "N/A",
-    titre: r.title?.rendered || r.title || r.titre || "Titre inconnu",
-    guest: r.guest || r.invite || r.acf?.invite || "Non spécifié",
-    mood: r.mood || r.acf?.mood || "💡",
-    resumeia2lignes: r.resumeia2lignes || r.excerpt?.rendered?.replace(/(<([^>]+)>)/gi, "") || r.resume || "",
-    spotify: r.spotify_url || r.acf?.spotify_url || "",
-    actionsconcretes: r.actionsconcretes || r.acf?.actions_concretes || []
+    titre: r.title || r.seo_title_yoast || "Titre inconnu",
+    guest: r.guest || r.invite || "Non spécifié",
+    mood: r.mood || "💡",
+    resume: r.resumeia2lignes || r.description || "",
+    actions: r.actionsconcretes || [],
+    link_page: r.link_page || "",
+    link_spotify: r.link_spotify || r.spotify_url || ""
   }));
+
   let md = "Voici les résultats trouvés :\n\n";
   cards.forEach((c: any) => {
     md += `### ${c.mood} ${c.titre}\n`;
     md += `- **Invité(e)** : ${c.guest}\n`;
-    md += `- **Résumé** : ${c.resumeia2lignes.trim()}\n`;
-    if (c.actionsconcretes) {
-      const actions = Array.isArray(c.actionsconcretes) ? c.actionsconcretes.join(" | ") : c.actionsconcretes;
-      if (actions) md += `- **Actions concrètes** : ${actions}\n`;
+    md += `- **Résumé** : ${c.resume.trim()}\n`;
+    
+    if (c.actions && (Array.isArray(c.actions) ? c.actions.length > 0 : c.actions)) {
+      const actionsText = Array.isArray(c.actions) ? c.actions.join(" | ") : c.actions;
+      md += `- **Actions concrètes** : ${actionsText}\n`;
     }
-    if (c.spotify) md += `- [Écouter sur Spotify](${c.spotify})\n`;
+    
+    // On ajoute les liens officiels que l'IA réclamait
+    if (c.link_page) md += `- [🔗 Fiche épisode complète](${c.link_page})\n`;
+    if (c.link_spotify) md += `- [Écouter sur Spotify](${c.link_spotify})\n`;
     md += "\n";
   });
   return md + LLM_RULES;
@@ -145,11 +152,14 @@ async function callTool(name: string, args: any): Promise<string> {
       let hasActions = false;
       results.forEach((r: any) => {
         const actions = r.actionsconcretes || r.acf?.actions_concretes;
-        const titre = r.title?.rendered || r.title || r.titre || "Épisode";
-        if (actions?.length > 0) {
+        const titre = r.title || r.titre || "Épisode";
+        const link = r.link_page || "";
+        if (actions && (Array.isArray(actions) ? actions.length > 0 : actions)) {
           hasActions = true;
           md += `### Tiré de : ${titre}\n`;
-          actions.forEach((a: string) => { md += `- ${a}\n`; });
+          const actionsList = Array.isArray(actions) ? actions : [actions];
+          actionsList.forEach((a: string) => { md += `- ${a}\n`; });
+          if (link) md += `- [Lien vers l'épisode](${link})\n`;
           md += "\n";
         }
       });
@@ -216,7 +226,7 @@ export const handler = async (event: any) => {
         return ok({
           protocolVersion: "2024-11-05",
           capabilities: { tools: {} },
-          serverInfo: { name: "Soluble(s) MCP", version: "1.0.0" }
+          serverInfo: { name: "Soluble(s) MCP", version: "1.0.1" }
         });
       case "tools/list":
         return ok({ tools: TOOLS });
