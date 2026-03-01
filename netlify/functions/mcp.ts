@@ -38,7 +38,10 @@ function formatEpisodeCards(results: any[]) {
     md += `### ${c.mood} ${c.titre}\n`;
     md += `- **Invité(e)** : ${c.guest}\n`;
     md += `- **Résumé** : ${c.resumeia2lignes.trim()}\n`;
-    if (c.actionsconcretes?.length > 0) md += `- **Actions concrètes** : ${c.actionsconcretes.join(" | ")}\n`;
+    if (c.actionsconcretes) {
+      const actions = Array.isArray(c.actionsconcretes) ? c.actionsconcretes.join(" | ") : c.actionsconcretes;
+      if (actions) md += `- **Actions concrètes** : ${actions}\n`;
+    }
     if (c.spotify) md += `- [Écouter sur Spotify](${c.spotify})\n`;
     md += "\n";
   });
@@ -53,9 +56,23 @@ const TOOLS = [
       type: "object",
       properties: {
         query: { type: "string", description: "Mots-clés de recherche" },
+        category: { type: "string", description: "Catégorie optionnelle" },
+        mood: { type: "string", description: "Mood optionnel" },
         limit: { type: "number", description: "Nombre de résultats max", default: 5 }
       },
       required: ["query"]
+    }
+  },
+  {
+    name: "find_solutions_for_need",
+    description: "Trouver des solutions pour un besoin ou une question spécifique",
+    inputSchema: {
+      type: "object",
+      properties: {
+        besoin_or_question: { type: "string", description: "Le besoin ou la question" },
+        limit: { type: "number", description: "Nombre de résultats max", default: 5 }
+      },
+      required: ["besoin_or_question"]
     }
   },
   {
@@ -65,6 +82,28 @@ const TOOLS = [
       type: "object",
       properties: {
         limit: { type: "number", description: "Nombre de résultats max", default: 5 }
+      }
+    }
+  },
+  {
+    name: "recommend_solutions",
+    description: "Recommander des solutions basées sur un contexte donné",
+    inputSchema: {
+      type: "object",
+      properties: {
+        context: { type: "string", description: "Contexte de la recommandation" },
+        limit: { type: "number", description: "Nombre de recommandations", default: 5 }
+      },
+      required: ["context"]
+    }
+  },
+  {
+    name: "get_concrete_actions",
+    description: "Extraire uniquement les actions concrètes des épisodes",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Mots-clés optionnels" }
       }
     }
   },
@@ -84,12 +123,38 @@ const TOOLS = [
 async function callTool(name: string, args: any): Promise<string> {
   switch (name) {
     case "search_solutions_concretes": {
-      const data = await fetchAPI("/v1/solutions", { q: args.query, limit: args.limit ?? 5 });
+      const data = await fetchAPI("/v1/solutions", { q: args.query, category: args.category, mood: args.mood, limit: args.limit ?? 5 });
+      return formatEpisodeCards(data.results);
+    }
+    case "find_solutions_for_need": {
+      const data = await fetchAPI("/v1/solutions", { q: args.besoin_or_question, limit: args.limit ?? 5 });
       return formatEpisodeCards(data.results);
     }
     case "get_latest_solutions": {
       const data = await fetchAPI("/v1/solutions", { limit: args.limit ?? 5 });
       return formatEpisodeCards(data.results);
+    }
+    case "recommend_solutions": {
+      const data = await fetchAPI("/v1/solutions", { q: args.context, limit: args.limit ?? 5 });
+      return formatEpisodeCards(data.results);
+    }
+    case "get_concrete_actions": {
+      const data = await fetchAPI("/v1/solutions", { q: args.query, limit: 10 });
+      const results = data.results || [];
+      let md = `Voici les actions concrètes extraites :\n\n`;
+      let hasActions = false;
+      results.forEach((r: any) => {
+        const actions = r.actionsconcretes || r.acf?.actions_concretes;
+        const titre = r.title?.rendered || r.title || r.titre || "Épisode";
+        if (actions?.length > 0) {
+          hasActions = true;
+          md += `### Tiré de : ${titre}\n`;
+          actions.forEach((a: string) => { md += `- ${a}\n`; });
+          md += "\n";
+        }
+      });
+      if (!hasActions) md = "Aucune action concrète trouvée.\n\n";
+      return md + LLM_RULES;
     }
     case "search_across_apis": {
       const [solData, searchData] = await Promise.all([
