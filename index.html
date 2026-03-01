@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soluble(s) | Connecteur IA Officiel (MCP)</title>
+  <style>
+    :root {
+      --bg-color: #FDFBF7;
+      --text-color: #121212;
+      --card-bg: #FFFFFF;
+      --brand-red: #E61E25;
+      --border-color: #121212;
+      --beige: #F5EFE6;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+
+    .container { max-width: 800px; margin: 0 auto; }
+
+    /* STYLE BRUTALISTE SOLUBLE(S) */
+    .header-pilier { margin-bottom: 50px; }
+    .header-kicker { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #555; margin-bottom: 10px; }
+    .pilier-title { font-size: 2.5rem; font-weight: 900; letter-spacing: -1px; margin: 0 0 16px 0; line-height: 1.1; }
+
+    .stat-item {
+      border: 3px solid var(--border-color);
+      padding: 30px;
+      background: #fff;
+      box-shadow: 8px 8px 0px var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 40px;
+    }
+
+    .url-display {
+      background: var(--beige);
+      padding: 15px;
+      border: 2px dashed var(--border-color);
+      font-family: monospace;
+      font-size: 1.1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    .card-btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: var(--brand-red);
+      color: white;
+      border: 3px solid var(--border-color);
+      border-radius: 8px;
+      font-weight: 800;
+      text-decoration: none;
+      text-transform: uppercase;
+      box-shadow: 4px 4px 0 var(--border-color);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .card-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--border-color); }
+    .card-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0 var(--border-color); }
+
+    pre {
+      background: #121212;
+      color: #00ff00;
+      padding: 20px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    h2 { text-transform: uppercase; font-weight: 900; border-bottom: 3px solid var(--text-color); display: inline-block; padding-bottom: 5px; margin-top: 40px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header class="header-pilier">
+    <div class="header-kicker">Outil de journalisme de solutions • MCP</div>
+    <h1 class="pilier-title">Connectez Soluble(s) à votre Intelligence Artificielle</h1>
+    <p class="pilier-subtitle">
+      Interrogez directement notre base de solutions concrètes depuis <strong>Claude</strong>, <strong>Cursor</strong> ou <strong>Windsurf</strong> grâce au protocole MCP.
+    </p>
+  </header>
+
+  <section class="stat-item">
+    <span class="header-kicker">URL du serveur officiel</span>
+    <div class="url-display">
+      <span id="mcp-url">https://mcp.csoluble.media/api/mcp</span>
+    </div>
+    <button class="card-btn" onclick="copyUrl()">Copier l'adresse du serveur</button>
+  </section>
+
+  <section>
+    <h2>🚀 Installation Rapide</h2>
+    
+    <div class="step">
+      <h3>Dans Cursor ou Windsurf</h3>
+      <p>1. Allez dans <strong>Settings > Tools > MCP</strong>.<br>
+         2. Ajoutez un nouveau serveur (Type: <strong>SSE</strong>).<br>
+         3. Collez l'URL ci-dessus.</p>
+    </div>
+
+    <div class="step">
+      <h3>Dans Claude Desktop</h3>
+      <p>Modifiez votre fichier <code>claude_desktop_config.json</code> :</p>
+      <pre>
+"mcpServers": {
+  "solubles": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/inspector", "--transport", "sse", "https://mcp.csoluble.media/api/mcp"]
+  }
+}</pre>
+    </div>
+  </section>
+
+  <footer style="margin-top: 60px; border-top: 1px solid #ccc; padding-top: 20px; font-size: 0.8rem; color: #777;">
+    Une initiative de Simon Icard • <a href="https://csoluble.media">csoluble.media</a>
+  </footer>
+</div>
+
+<script>
+  function copyUrl() {
+    const url = document.getElementById('mcp-url').innerText;
+    navigator.clipboard.writeText(url);
+    alert("URL copiée dans le presse-papier !");
+  }
+</script>
+
+</body>
+</html>
