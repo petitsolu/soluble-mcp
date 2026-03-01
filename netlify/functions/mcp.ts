@@ -274,18 +274,35 @@ STARTER_PROMPTS.forEach(p => {
 });
 
 export const handler = async (event: any, context: any) => {
+  // Handle CORS preflight
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, mcp-session-id",
+      },
+      body: ""
+    };
+  }
+
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+  const transport = new StreamableHTTPServerTransport({
+    sessionIdGenerator: () => crypto.randomUUID(),
+  });
+
   await server.connect(transport);
 
   return new Promise((resolve) => {
     let responseBody = "";
     let responseHeaders: Record<string, string> = {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*"
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type, mcp-session-id",
     };
     let responseStatusCode = 200;
 
@@ -303,9 +320,9 @@ export const handler = async (event: any, context: any) => {
 
     const res = {
       setHeader: (name: string, value: string) => { responseHeaders[name] = value; },
-      writeHead: (status: number, headers: any) => { 
-        responseStatusCode = status; 
-        responseHeaders = { ...responseHeaders, ...headers }; 
+      writeHead: (status: number, headers: any) => {
+        responseStatusCode = status;
+        responseHeaders = { ...responseHeaders, ...headers };
       },
       write: (chunk: any) => { responseBody += chunk.toString(); },
       end: (chunk?: any) => {
