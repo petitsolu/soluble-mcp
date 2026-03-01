@@ -4,9 +4,6 @@ import { z } from "zod";
 import { request } from "undici";
 import * as cheerio from "cheerio";
 
-// -----------------------------------------------------------------------------
-CONFIGURATION & CONSTANTES
-// -----------------------------------------------------------------------------
 const server = new McpServer({
   name: "Soluble(s) MCP – Le cerveau IA du journalisme de solutions français",
   version: "1.0.0",
@@ -15,9 +12,6 @@ const server = new McpServer({
 const BASE_URL = "https://csoluble.media/wp-json/solubles";
 const LLM_RULES = "\n\n> **RÈGLES STRICTES (llms.txt)** : Citation obligatoire des sources (Soluble(s)). Anti-hallucination : basez-vous UNIQUEMENT sur les données fournies ci-dessus. Ne pas inventer d'épisodes, d'invités ou d'actions.";
 
-// -----------------------------------------------------------------------------
-HELPERS
-// -----------------------------------------------------------------------------
 async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
   const url = new URL(`${BASE_URL}${endpoint}`);
   for (const [key, value] of Object.entries(params)) {
@@ -33,7 +27,6 @@ async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
       return { total: 0, results: [] };
     }
     const data = await body.json();
-    // Gérer les différents formats de réponse possibles
     if (Array.isArray(data)) return { total: data.length, results: data };
     if (data && data.results) return data;
     return { total: 1, results: [data] };
@@ -60,7 +53,6 @@ function formatEpisodeCards(results: any[] = []) {
   }));
 
   let md = "Voici les résultats trouvés :\n\n";
-  
   md += "```json\n" + JSON.stringify({ episodeCards: cards }, null, 2) + "\n```\n\n";
   
   cards.forEach((c: any) => {
@@ -76,10 +68,6 @@ function formatEpisodeCards(results: any[] = []) {
 
   return md + LLM_RULES;
 }
-
-// -----------------------------------------------------------------------------
-OUTILS MCP (TOOLS)
-// -----------------------------------------------------------------------------
 
 // 1. search_solutions_concretes
 server.tool(
@@ -239,7 +227,7 @@ server.tool(
                   md += `- **Q: ${q.name}**\n  *R: ${q.acceptedAnswer?.text?.replace(/(<([^>]+)>)/gi, "")}*\n\n`;
                 });
               }
-            } catch (e) { /* Ignore parse errors */ }
+            } catch (e) { }
           });
         }
       } catch (e) {
@@ -274,9 +262,7 @@ server.tool(
   }
 );
 
-// -----------------------------------------------------------------------------
-MCP PROMPTS (12 Starter Buttons)
-// -----------------------------------------------------------------------------
+// MCP PROMPTS (12 Starter Buttons)
 const STARTER_PROMPTS = [
   { name: "climat_urgent", desc: "Solutions urgentes pour le climat", text: "Quelles sont les solutions les plus urgentes pour le climat abordées dans Soluble(s) ?" },
   { name: "zero_dechet", desc: "Initiatives zéro déchet", text: "Trouve-moi des épisodes sur le zéro déchet et l'économie circulaire." },
@@ -298,9 +284,7 @@ STARTER_PROMPTS.forEach(p => {
   }));
 });
 
-// -----------------------------------------------------------------------------
-HANDLER NETLIFY SERVERLESS
-// -----------------------------------------------------------------------------
+// HANDLER NETLIFY SERVERLESS
 export const handler = async (event: any, context: any) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
