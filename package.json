@@ -1,8 +1,13 @@
 {
-  "name": "petitsolu-mcp",
+  "name": "soluble-mcp",
   "version": "1.0.0",
-  "description": "Soluble(s) MCP – Le cerveau IA du journalisme de solutions français",
-  "scripts": {},
-  "dependencies": {},
-  "devDependencies": {}
+  "description": "Serveur MCP pour Soluble(s)",
+  "main": "index.js",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@netlify/functions": "^2.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
 }
