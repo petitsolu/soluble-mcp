@@ -1,7 +1,3 @@
-import { z } from "zod";
-import { request } from "undici";
-import * as cheerio from "cheerio";
-
 const BASE_URL = "https://csoluble.media/wp-json/solubles";
 const LLM_RULES = "\n\n> **RÈGLES STRICTES (llms.txt)** : Citation obligatoire des sources (Soluble(s)). Anti-hallucination : basez-vous UNIQUEMENT sur les données fournies ci-dessus. Ne pas inventer d'épisodes, d'invités ou d'actions.";
 
@@ -13,9 +9,9 @@ async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
     }
   }
   try {
-    const { statusCode, body } = await request(url.toString());
-    if (statusCode !== 200) return { total: 0, results: [] };
-    const data = await body.json() as any;
+    const res = await fetch(url.toString());
+    if (!res.ok) return { total: 0, results: [] };
+    const data = await res.json() as any;
     if (Array.isArray(data)) return { total: data.length, results: data };
     if (data && typeof data === "object" && Array.isArray(data.results)) {
       return { total: data.total ?? data.results.length, results: data.results };
@@ -219,19 +215,15 @@ export const handler = async (event: any) => {
           capabilities: { tools: {} },
           serverInfo: { name: "Soluble(s) MCP", version: "1.0.0" }
         });
-
       case "tools/list":
         return ok({ tools: TOOLS });
-
       case "tools/call": {
         const { name, arguments: args } = params;
         const text = await callTool(name, args || {});
         return ok({ content: [{ type: "text", text }] });
       }
-
       case "ping":
         return ok({});
-
       default:
         return err(-32601, `Method not found: ${method}`);
     }
