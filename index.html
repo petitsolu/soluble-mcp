@@ -29,7 +29,38 @@
     .header-pilier { margin-bottom: 50px; }
     .header-kicker { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #555; margin-bottom: 10px; }
     .pilier-title { font-size: 2.5rem; font-weight: 900; letter-spacing: -1px; margin: 0 0 16px 0; line-height: 1.1; }
+    .pilier-subtitle { font-size: 1.2rem; color: #333; margin-bottom: 18px; max-width: 700px; }
 
+    /* STATUS BADGE */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 5px 12px;
+      background: white;
+      border: 2px solid var(--border-color);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .dot {
+      height: 8px;
+      width: 8px;
+      background-color: #00E676;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #00E676;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    /* URL BOX */
     .stat-item {
       border: 3px solid var(--border-color);
       padding: 30px;
@@ -49,6 +80,7 @@
       justify-content: space-between;
       align-items: center;
       margin: 20px 0;
+      word-break: break-all;
     }
 
     .card-btn {
@@ -69,62 +101,77 @@
     .card-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--border-color); }
     .card-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0 var(--border-color); }
 
+    /* CODE BLOCKS */
     pre {
       background: #121212;
-      color: #00ff00;
+      color: #FDFBF7;
       padding: 20px;
       border-radius: 8px;
       overflow-x: auto;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      border-left: 5px solid var(--brand-red);
     }
 
+    .step { margin-bottom: 30px; }
     h2 { text-transform: uppercase; font-weight: 900; border-bottom: 3px solid var(--text-color); display: inline-block; padding-bottom: 5px; margin-top: 40px; }
+    h3 { font-weight: 800; margin-bottom: 10px; }
+
+    footer { margin-top: 60px; border-top: 2px solid var(--border-color); padding-top: 20px; font-size: 0.85rem; font-weight: 600; }
   </style>
 </head>
 <body>
 
 <div class="container">
   <header class="header-pilier">
-    <div class="header-kicker">Outil de journalisme de solutions • MCP</div>
-    <h1 class="pilier-title">Connectez Soluble(s) à votre Intelligence Artificielle</h1>
+    <div class="status-badge">
+      <span class="dot"></span> Serveur MCP Opérationnel
+    </div>
+    <div class="header-kicker">Intelligence Artificielle • Journalisme de solutions</div>
+    <h1 class="pilier-title">Connectez Soluble(s) à votre IA</h1>
     <p class="pilier-subtitle">
-      Interrogez directement notre base de solutions concrètes depuis <strong>Claude</strong>, <strong>Cursor</strong> ou <strong>Windsurf</strong> grâce au protocole MCP.
+      Interrogez directement notre base de solutions concrètes et nos épisodes de podcast depuis <strong>Claude</strong>, <strong>Cursor</strong> ou <strong>Windsurf</strong>.
     </p>
   </header>
 
   <section class="stat-item">
-    <span class="header-kicker">URL du serveur officiel</span>
+    <span class="header-kicker">URL du serveur distant (SSE)</span>
     <div class="url-display">
       <span id="mcp-url">https://mcp.csoluble.media/api/mcp</span>
     </div>
-    <button class="card-btn" onclick="copyUrl()">Copier l'adresse du serveur</button>
+    <button class="card-btn" onclick="copyUrl()">Copier l'URL officielle</button>
   </section>
 
   <section>
-    <h2>🚀 Installation Rapide</h2>
+    <h2>🚀 Guide d'installation</h2>
     
     <div class="step">
-      <h3>Dans Cursor ou Windsurf</h3>
-      <p>1. Allez dans <strong>Settings > Tools > MCP</strong>.<br>
-         2. Ajoutez un nouveau serveur (Type: <strong>SSE</strong>).<br>
-         3. Collez l'URL ci-dessus.</p>
+      <h3>1. Cursor / Windsurf</h3>
+      <p>Allez dans <strong>Settings > Tools > MCP</strong>. Ajoutez un nouveau serveur avec ces paramètres :<br>
+         • Type : <strong>SSE</strong><br>
+         • URL : <code>https://mcp.csoluble.media/api/mcp</code></p>
     </div>
 
     <div class="step">
-      <h3>Dans Claude Desktop</h3>
-      <p>Modifiez votre fichier <code>claude_desktop_config.json</code> :</p>
+      <h3>2. Claude Desktop</h3>
+      <p>Ajoutez ce bloc à votre fichier <code>claude_desktop_config.json</code> :</p>
       <pre>
 "mcpServers": {
   "solubles": {
     "command": "npx",
-    "args": ["-y", "@modelcontextprotocol/inspector", "--transport", "sse", "https://mcp.csoluble.media/api/mcp"]
+    "args": [
+      "-y", 
+      "@modelcontextprotocol/inspector", 
+      "--transport", 
+      "sse", 
+      "https://mcp.csoluble.media/api/mcp"
+    ]
   }
 }</pre>
     </div>
   </section>
 
-  <footer style="margin-top: 60px; border-top: 1px solid #ccc; padding-top: 20px; font-size: 0.8rem; color: #777;">
-    Une initiative de Simon Icard • <a href="https://csoluble.media">csoluble.media</a>
+  <footer>
+    Une initiative de Simon Icard • <a href="https://csoluble.media" style="color: var(--brand-red);">Retour sur csoluble.media</a>
   </footer>
 </div>
 
@@ -132,7 +179,9 @@
   function copyUrl() {
     const url = document.getElementById('mcp-url').innerText;
     navigator.clipboard.writeText(url);
-    alert("URL copiée dans le presse-papier !");
+    const btn = document.querySelector('.card-btn');
+    btn.innerText = "Copié !";
+    setTimeout(() => { btn.innerText = "Copier l'URL officielle"; }, 2000);
   }
 </script>
 
