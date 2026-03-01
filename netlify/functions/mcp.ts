@@ -22,18 +22,19 @@ async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
   }
 }
 
-// CHIRURGIE DE PRÉCISION ICI : On utilise tes vrais noms de colonnes sans casser la structure
+// FORMATAGE OPTIMISÉ AVEC TES VRAIS NOMS DE COLONNES
 function formatEpisodeCards(results: any[]) {
   if (!results || results.length === 0) return "Aucun résultat trouvé." + LLM_RULES;
   
   const cards = results.map((r: any) => ({
+    id: r.id || r.slug || "N/A",
     titre: r.title || r.seo_title_yoast || "Titre inconnu",
     guest: r.guest || r.invite || "Non spécifié",
     mood: r.mood || "💡",
     resume: r.resumeia2lignes || r.description || "",
     actions: r.actionsconcretes || [],
     link_page: r.link_page || "",
-    link_spotify: r.link_spotify || r.spotify_url || ""
+    link_spotify: r.link_spotify || r.link_spotifylink_apple || "" 
   }));
 
   let md = "Voici les résultats trouvés :\n\n";
@@ -47,7 +48,7 @@ function formatEpisodeCards(results: any[]) {
       md += `- **Actions concrètes** : ${actionsText}\n`;
     }
     
-    // On ajoute les liens officiels que l'IA réclamait
+    // Ajout des liens cliquables pour l'IA
     if (c.link_page) md += `- [🔗 Fiche épisode complète](${c.link_page})\n`;
     if (c.link_spotify) md += `- [Écouter sur Spotify](${c.link_spotify})\n`;
     md += "\n";
@@ -58,7 +59,7 @@ function formatEpisodeCards(results: any[]) {
 const TOOLS = [
   {
     name: "search_solutions_concretes",
-    description: "Rechercher des solutions concrètes dans les épisodes",
+    description: "Trouver des gestes pratiques et des solutions écologiques issus des podcasts Soluble(s). Idéal pour savoir comment agir concrètement.",
     inputSchema: {
       type: "object",
       properties: {
@@ -72,7 +73,7 @@ const TOOLS = [
   },
   {
     name: "find_solutions_for_need",
-    description: "Trouver des solutions pour un besoin ou une question spécifique",
+    description: "Trouver des épisodes Soluble(s) qui apportent des solutions concrètes à un besoin donné (ex: biodiversité au jardin).",
     inputSchema: {
       type: "object",
       properties: {
@@ -84,7 +85,7 @@ const TOOLS = [
   },
   {
     name: "get_latest_solutions",
-    description: "Récupérer les dernières solutions publiées",
+    description: "Récupérer les 5 dernières solutions publiées sur Soluble(s).",
     inputSchema: {
       type: "object",
       properties: {
@@ -94,7 +95,7 @@ const TOOLS = [
   },
   {
     name: "recommend_solutions",
-    description: "Recommander des solutions basées sur un contexte donné",
+    description: "Recommander des solutions basées sur un profil (citoyen, entreprise, collectivité) ou un contexte.",
     inputSchema: {
       type: "object",
       properties: {
@@ -106,7 +107,7 @@ const TOOLS = [
   },
   {
     name: "get_concrete_actions",
-    description: "Extraire uniquement les actions concrètes des épisodes",
+    description: "Extraire uniquement la liste des actions concrètes des épisodes sans le résumé complet.",
     inputSchema: {
       type: "object",
       properties: {
@@ -116,7 +117,7 @@ const TOOLS = [
   },
   {
     name: "search_across_apis",
-    description: "Rechercher à travers toutes les APIs disponibles",
+    description: "Rechercher à travers toutes les bases de données de Soluble(s) pour une réponse complète.",
     inputSchema: {
       type: "object",
       properties: {
@@ -158,7 +159,7 @@ async function callTool(name: string, args: any): Promise<string> {
           hasActions = true;
           md += `### Tiré de : ${titre}\n`;
           const actionsList = Array.isArray(actions) ? actions : [actions];
-          actionsList.forEach((a: string) => { md += `- ${a}\n`; });
+          actionsList.forEach((a: string) => { md += `- ✅ ${a}\n`; });
           if (link) md += `- [Lien vers l'épisode](${link})\n`;
           md += "\n";
         }
@@ -226,7 +227,7 @@ export const handler = async (event: any) => {
         return ok({
           protocolVersion: "2024-11-05",
           capabilities: { tools: {} },
-          serverInfo: { name: "Soluble(s) MCP", version: "1.0.1" }
+          serverInfo: { name: "Soluble(s) MCP", version: "1.1.0" }
         });
       case "tools/list":
         return ok({ tools: TOOLS });
