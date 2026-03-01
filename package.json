@@ -1,0 +1,19 @@
+{
+  "name": "petitsolu-mcp",
+  "version": "1.0.0",
+  "description": "Soluble(s) MCP – Le cerveau IA du journalisme de solutions français",
+  "main": "netlify/functions/mcp.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.27.1",
+    "zod": "^3.22.4",
+    "undici": "^6.6.2",
+    "cheerio": "^1.0.0-rc.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.3"
+  }
+}
