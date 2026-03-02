@@ -18,14 +18,14 @@ async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
     const res = await fetch(url.toString());
     if (!res.ok) return { total: 0, results: [] };
     const data = await res.json() as any;
-    return Array.isArray(data) ? { total: data.length, results: data } : 
+    return Array.isArray(data) ? { total: data.length, results: data } :
            (data?.results ? { total: data.total ?? data.results.length, results: data.results } : { total: 1, results: [data] });
   } catch { return { total: 0, results: [] }; }
 }
 
 function formatEpisodeCards(results: any[]) {
   if (!results || results.length === 0) return "Aucun résultat trouvé." + LLM_RULES;
-  
+
   const cards = results.map((r: any) => {
     const basePage = ensureTrailingSlash(r.link_page || r.url);
     return {
@@ -83,6 +83,57 @@ const TOOLS = [
       properties: { limit: { type: "number", default: 5 } }
     },
     annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  {
+    name: "recommend_solutions",
+    title: "Recommander des solutions",
+    description: "Recommande des épisodes Soluble(s) selon un contexte ou profil utilisateur (ex: parent, enseignant, militant, entreprise).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        context: {
+          type: "string",
+          description: "Le contexte ou profil (ex: 'je suis enseignant', 'entreprise RSE', 'parent inquiet du climat')"
+        },
+        limit: { type: "number", default: 5 }
+      },
+      required: ["context"]
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  {
+    name: "get_concrete_actions",
+    title: "Extraire les actions concrètes",
+    description: "Extrait uniquement la liste des actions concrètes liées à un sujet, au format checklist. Idéal pour créer des guides pratiques.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Le sujet (ex: biodiversité, alimentation, violences, mobilité)"
+        },
+        limit: { type: "number", default: 5 }
+      },
+      required: ["query"]
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  {
+    name: "search_across_apis",
+    title: "Recherche globale",
+    description: "Recherche globale à travers toutes les APIs Soluble(s) — combine titres, transcriptions, actions et besoins.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "La requête libre (ex: 'solutions contre le sans-abrisme', 'écologie positive')"
+        },
+        limit: { type: "number", default: 10 }
+      },
+      required: ["query"]
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false }
   }
 ];
 
@@ -100,24 +151,86 @@ async function callTool(name: string, args: any): Promise<string> {
       const data = await fetchAPI("/v1/solutions", { limit: args.limit ?? 5 });
       return formatEpisodeCards(data.results);
     }
+    case "recommend_solutions": {
+      const data = await fetchAPI("/v1/solutions", {
+        q: args.context,
+        limit: args.limit ?? 5
+      });
+      return formatEpisodeCards(data.results);
+    }
+    case "get_concrete_actions": {
+      const data = await fetchAPI("/v1/solutions", {
+        q: args.query,
+        limit: args.limit ?? 5
+      });
+      if (!data.results || data.results.length === 0) return "Aucune action trouvée." + LLM_RULES;
+      let checklist = `## ✅ Actions concrètes — "${args.query}"\n\n`;
+      data.results.forEach((r: any) => {
+        const actions = r.actionsconcretes || r.solutions || [];
+        if (actions.length > 0) {
+          checklist += `**${r.title || "Épisode"}**\n`;
+          const actionList = Array.isArray(actions) ? actions : [actions];
+          actionList.forEach((a: string) => { checklist += `- [ ] ${a}\n`; });
+          checklist += "\n";
+        }
+      });
+      return checklist + LLM_RULES;
+    }
+    case "search_across_apis": {
+      const [sol, sea] = await Promise.all([
+        fetchAPI("/v1/solutions", { q: args.query, limit: args.limit ?? 5 }),
+        fetchAPI("/v1/search", { q: args.query, limit: args.limit ?? 5 })
+      ]);
+      const seen = new Set<string>();
+      const merged = [...sol.results, ...sea.results].filter((r: any) => {
+        const key = r.title || r.seo_title_yoast || "";
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return formatEpisodeCards(merged);
+    }
     default: throw new Error(`Tool not found: ${name}`);
   }
 }
 
 export const handler = async (event: any) => {
-  const headers = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  };
   if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
   if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: "Method Not Allowed" };
+
   let body: any;
-  try { body = JSON.parse(event.body || "{}"); } catch { return { statusCode: 400, headers, body: "Invalid JSON" }; }
+  try { body = JSON.parse(event.body || "{}"); } catch {
+    return { statusCode: 400, headers, body: "Invalid JSON" };
+  }
+
   const { method, params, id } = body;
-  const ok = (result: any) => ({ statusCode: 200, headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id, result }) });
-  const err = (code: number, message: string) => ({ statusCode: 200, headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } }) });
+  const ok = (result: any) => ({
+    statusCode: 200,
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id, result })
+  });
+  const err = (code: number, message: string) => ({
+    statusCode: 200,
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } })
+  });
+
   try {
     switch (method) {
-      case "initialize": return ok({ protocolVersion: "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "Soluble(s) MCP", version: "1.1.4", contact: SUPPORT_CONTACT } });
+      case "initialize": return ok({
+        protocolVersion: "2024-11-05",
+        capabilities: { tools: {} },
+        serverInfo: { name: "Soluble(s) MCP", version: "1.1.5", contact: SUPPORT_CONTACT }
+      });
       case "tools/list": return ok({ tools: TOOLS });
-      case "tools/call": return ok({ content: [{ type: "text", text: await callTool(params.name, params.arguments || {}) }] });
+      case "tools/call": return ok({
+        content: [{ type: "text", text: await callTool(params.name, params.arguments || {}) }]
+      });
       case "ping": return ok({});
       default: return err(-32601, `Method not found: ${method}`);
     }
