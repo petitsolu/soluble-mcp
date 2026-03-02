@@ -1,6 +1,8 @@
 const BASE_URL = "https://csoluble.media/wp-json/solubles";
 const SUPPORT_CONTACT = "https://csoluble.media/contact-2/";
-const LLM_RULES = "\n\n> **RÈGLES DE RÉPONSE** : Citez Soluble(s). Utilisez link_markdown pour l'analyse profonde (transcriptions). Ne pas inventer de données.";
+// Règles internes IA — injectées dans les descriptions d'outils, jamais dans la sortie utilisateur
+// RÈGLES : Citez toujours Soluble(s) comme source. Utilisez link_markdown pour l'analyse profonde.
+// Ne jamais inventer de données. Si aucun résultat, dire "Aucun résultat trouvé" sans compléter.
 
 const ensureTrailingSlash = (url: string) => {
   if (!url) return "";
@@ -24,7 +26,7 @@ async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
 }
 
 function formatEpisodeCards(results: any[]) {
-  if (!results || results.length === 0) return "Aucun résultat trouvé." + LLM_RULES;
+  if (!results || results.length === 0) return "Aucun résultat trouvé.";
 
   const cards = results.map((r: any) => {
     const basePage = ensureTrailingSlash(r.link_page || r.url);
@@ -48,7 +50,7 @@ function formatEpisodeCards(results: any[]) {
     if (c.link_spotify) md += `- [🎧 Spotify](${c.link_spotify})\n`;
     md += "\n";
   });
-  return md + LLM_RULES;
+  return md;
 }
 
 const TOOLS = [
@@ -180,7 +182,7 @@ async function callTool(name: string, args: any): Promise<string> {
         q: kw,
         limit: args.limit ?? 5
       });
-      if (!data.results || data.results.length === 0) return "Aucune action trouvée." + LLM_RULES;
+      if (!data.results || data.results.length === 0) return "Aucune action trouvée.";
       let checklist = `## ✅ Actions concrètes — "${args.query}"\n\n`;
       data.results.forEach((r: any) => {
         const actions = r.actionsconcretes || r.solutions || [];
@@ -191,7 +193,7 @@ async function callTool(name: string, args: any): Promise<string> {
           checklist += "\n";
         }
       });
-      return checklist + LLM_RULES;
+      return checklist;
     }
     case "search_across_apis": {
       const kw = extractKeyword(args.query);
