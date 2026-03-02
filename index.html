@@ -26,13 +26,11 @@
 
     .container { max-width: 800px; margin: 0 auto; }
 
-    /* STYLE BRUTALISTE SOLUBLE(S) */
     .header-pilier { margin-bottom: 50px; }
     .header-kicker { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #555; margin-bottom: 10px; }
     .pilier-title { font-size: 2.5rem; font-weight: 900; letter-spacing: -1px; margin: 0 0 16px 0; line-height: 1.1; }
     .pilier-subtitle { font-size: 1.2rem; color: #333; margin-bottom: 18px; max-width: 700px; }
 
-    /* STATUS BADGE */
     .status-badge {
       display: inline-flex;
       align-items: center;
@@ -57,7 +55,6 @@
 
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-    /* URL BOX */
     .stat-item {
       border: 3px solid var(--border-color);
       padding: 30px;
@@ -99,7 +96,6 @@
     .card-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--border-color); }
     .card-btn:active { transform: translate(1px, 1px); box-shadow: 0px 0px 0 var(--border-color); }
 
-    /* INFO BOX */
     .info-box {
       background: #E3F2FD;
       border: 2px solid var(--border-color);
@@ -108,7 +104,10 @@
       margin-bottom: 30px;
     }
 
-    /* CODE BLOCKS */
+    .info-box.submitted {
+      background: #E8F5E9;
+    }
+
     pre {
       background: #121212;
       color: #FDFBF7;
@@ -141,8 +140,8 @@
     </p>
   </header>
 
-  <div class="info-box">
-    <strong>💡 Note pour les auditeurs :</strong> Ce connecteur fonctionne actuellement avec les applications installées sur votre ordinateur (Desktop). Pour une utilisation directe sur le site Claude.ai, nous attendons la validation officielle d'Anthropic.
+  <div class="info-box submitted">
+    <strong>✅ Soumis au répertoire officiel Anthropic (mars 2026).</strong> Ce connecteur est déjà utilisable dès maintenant dans Claude Desktop, Cursor et Claude Code. La validation au répertoire Claude.ai est en cours.
   </div>
 
   <section class="stat-item">
@@ -155,9 +154,9 @@
 
   <section>
     <h2>🚀 Guide d'installation</h2>
-    
+
     <div class="step">
-      <h3>1. Cursor & Windsurf (Utilisateurs avancés)</h3>
+      <h3>1. Cursor & Windsurf (Recommandé)</h3>
       <p>Ouvrez les réglages MCP et ajoutez un serveur de type <strong>SSE</strong> avec ce bloc JSON :</p>
       <pre id="json-cursor">{
   "mcpServers": {
@@ -171,25 +170,31 @@
 
     <div class="step">
       <h3>2. Claude Desktop (Mac / Windows)</h3>
-      <p>Ajoutez ce bloc à votre fichier <code>claude_desktop_config.json</code> pour activer Soluble(s) dans votre application :</p>
-      <pre id="json-claude">"mcpServers": {
-  "solubles": {
-    "command": "npx",
-    "args": [
-      "-y", 
-      "@modelcontextprotocol/inspector", 
-      "--transport", 
-      "sse", 
-      "https://mcp.csoluble.media/api/mcp"
-    ]
+      <p>Ajoutez ce bloc à votre fichier <code>claude_desktop_config.json</code> :</p>
+      <pre id="json-claude">{
+  "mcpServers": {
+    "solubles": {
+      "url": "https://mcp.csoluble.media/api/mcp"
+    }
   }
 }</pre>
-      <button class="card-btn" onclick="copyContent('json-claude', this)">Copier le JSON Claude</button>
+      <button class="card-btn" onclick="copyContent('json-claude', this)">Copier le JSON Claude Desktop</button>
     </div>
+
+    <div class="step">
+      <h3>3. Claude Code (Terminal)</h3>
+      <p>Une seule commande à lancer dans votre terminal :</p>
+      <pre id="json-claudecode">claude mcp add solubles --transport sse https://mcp.csoluble.media/api/mcp</pre>
+      <button class="card-btn" onclick="copyContent('json-claudecode', this)">Copier la commande</button>
+    </div>
+
   </section>
 
   <footer>
-    Une initiative de Simon Icard • <a href="https://csoluble.media" style="color: var(--brand-red);">Retour sur csoluble.media</a>
+    Une initiative de Simon Icard — Paris & Marseille •
+    <a href="https://csoluble.media" style="color: var(--brand-red);">csoluble.media</a> •
+    <a href="https://csoluble.media/ai" style="color: var(--brand-red);">Hub IA</a> •
+    <a href="https://github.com/petitsolu/soluble-mcp" style="color: var(--brand-red);">GitHub</a>
   </footer>
 </div>
 
