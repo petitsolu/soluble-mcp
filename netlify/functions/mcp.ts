@@ -55,10 +55,10 @@ const TOOLS = [
   {
     name: "search_solutions_concretes",
     title: "Recherche par mots-clés",
-    description: "Recherche globale dans les titres et transcriptions pour trouver des thématiques précises.",
+    description: "Recherche globale dans les titres et transcriptions. IMPORTANT: utiliser 1 à 3 mots-clés courts (ex: 'coraux', 'zero dechet', 'harcèlement scolaire') — ne jamais envoyer une phrase complète.",
     inputSchema: {
       type: "object",
-      properties: { query: { type: "string", description: "Le mot-clé (ex: coraux, océans, vêtement)" } },
+      properties: { query: { type: "string", description: "1 à 3 mots-clés courts (ex: 'coraux', 'zero dechet', 'harcèlement')" } },
       required: ["query"]
     },
     annotations: { readOnlyHint: true, destructiveHint: false }
@@ -66,10 +66,10 @@ const TOOLS = [
   {
     name: "find_solutions_for_need",
     title: "Trouver des solutions par besoin",
-    description: "Recherche des solutions basées sur un besoin utilisateur (ex: manger local, s'engager).",
+    description: "Recherche des solutions basées sur un besoin utilisateur. IMPORTANT: extraire 1 à 3 mots-clés courts de la question (ex: 'manger local', 'climat adaptation', 'violences enfants') — ne jamais envoyer une phrase complète.",
     inputSchema: {
       type: "object",
-      properties: { besoin_or_question: { type: "string", description: "Le besoin exprimé" } },
+      properties: { besoin_or_question: { type: "string", description: "1 à 3 mots-clés courts résumant le besoin (ex: 'climat adaptation', 'manger local', 'violences enfants')" } },
       required: ["besoin_or_question"]
     },
     annotations: { readOnlyHint: true, destructiveHint: false }
@@ -93,7 +93,7 @@ const TOOLS = [
       properties: {
         context: {
           type: "string",
-          description: "Le contexte ou profil (ex: 'je suis enseignant', 'entreprise RSE', 'parent inquiet du climat')"
+          description: "1 à 3 mots-clés courts résumant le contexte (ex: 'enseignant', 'entreprise RSE', 'parent climat')"
         },
         limit: { type: "number", default: 5 }
       },
@@ -110,7 +110,7 @@ const TOOLS = [
       properties: {
         query: {
           type: "string",
-          description: "Le sujet (ex: biodiversité, alimentation, violences, mobilité)"
+          description: "1 à 3 mots-clés courts (ex: 'biodiversité', 'violences', 'mobilité')"
         },
         limit: { type: "number", default: 5 }
       },
@@ -127,7 +127,7 @@ const TOOLS = [
       properties: {
         query: {
           type: "string",
-          description: "La requête libre (ex: 'solutions contre le sans-abrisme', 'écologie positive')"
+          description: "1 à 3 mots-clés courts (ex: 'sans-abrisme', 'ecologie', 'mobilité')"
         },
         limit: { type: "number", default: 10 }
       },
