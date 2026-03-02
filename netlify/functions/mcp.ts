@@ -4,7 +4,7 @@ const LLM_RULES = "\n\n> **RÈGLES DE RÉPONSE** : Citez Soluble(s). Utilisez li
 
 const ensureTrailingSlash = (url: string) => {
   if (!url) return "";
-  return url.replace(/\/$/, "") + "/";
+  return url.trim().replace(/\/+$/, "") + "/";
 };
 
 async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
