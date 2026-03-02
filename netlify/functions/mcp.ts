@@ -137,14 +137,29 @@ const TOOLS = [
   }
 ];
 
+// Extrait le mot le plus pertinent d'une requête pour l'API WordPress
+function extractKeyword(input: string): string {
+  if (!input) return "";
+  // Supprimer les mots vides français et anglais courants
+  const stopwords = ["comment","quelles","quels","quelle","quel","les","des","une","pour","dans","face","aux","sur","avec","contre","sans","vers","entre","après","avant","faire","avoir","être","peut","sont","comment","solutions","solution","trouver","cherche","aide","besoin","what","how","find","search","about","the","and","for","with","from"];
+  const words = input.toLowerCase()
+    .replace(/['']/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 3 && !stopwords.includes(w));
+  // Retourner le mot le plus long (souvent le plus spécifique)
+  return words.sort((a, b) => b.length - a.length)[0] || input.split(" ")[0];
+}
+
 async function callTool(name: string, args: any): Promise<string> {
   switch (name) {
     case "search_solutions_concretes": {
-      const data = await fetchAPI("/v1/search", { q: args.query });
+      const kw = extractKeyword(args.query);
+      const data = await fetchAPI("/v1/search", { q: kw });
       return formatEpisodeCards(data.results);
     }
     case "find_solutions_for_need": {
-      const data = await fetchAPI("/v1/solutions", { q: args.besoin_or_question, limit: 5 });
+      const kw = extractKeyword(args.besoin_or_question);
+      const data = await fetchAPI("/v1/solutions", { q: kw, limit: 5 });
       return formatEpisodeCards(data.results);
     }
     case "get_latest_solutions": {
@@ -152,15 +167,17 @@ async function callTool(name: string, args: any): Promise<string> {
       return formatEpisodeCards(data.results);
     }
     case "recommend_solutions": {
+      const kw = extractKeyword(args.context);
       const data = await fetchAPI("/v1/solutions", {
-        q: args.context,
+        q: kw,
         limit: args.limit ?? 5
       });
       return formatEpisodeCards(data.results);
     }
     case "get_concrete_actions": {
+      const kw = extractKeyword(args.query);
       const data = await fetchAPI("/v1/solutions", {
-        q: args.query,
+        q: kw,
         limit: args.limit ?? 5
       });
       if (!data.results || data.results.length === 0) return "Aucune action trouvée." + LLM_RULES;
@@ -177,9 +194,10 @@ async function callTool(name: string, args: any): Promise<string> {
       return checklist + LLM_RULES;
     }
     case "search_across_apis": {
+      const kw = extractKeyword(args.query);
       const [sol, sea] = await Promise.all([
-        fetchAPI("/v1/solutions", { q: args.query, limit: args.limit ?? 5 }),
-        fetchAPI("/v1/search", { q: args.query, limit: args.limit ?? 5 })
+        fetchAPI("/v1/solutions", { q: kw, limit: args.limit ?? 5 }),
+        fetchAPI("/v1/search", { q: kw, limit: args.limit ?? 5 })
       ]);
       const seen = new Set<string>();
       const merged = [...sol.results, ...sea.results].filter((r: any) => {
