@@ -53,6 +53,42 @@ function formatEpisodeCards(results: any[]) {
   return md;
 }
 
+// NOUVEAU (avril 2026) : formateur dédié aux versions Junior
+function formatJuniorCards(results: any[]) {
+  if (!results || results.length === 0) {
+    return "Aucun résultat trouvé.";
+  }
+
+  // Filtrer uniquement les épisodes ayant une URL Junior valide
+  const juniorOnly = results.filter((r: any) =>
+    r.junior_url && typeof r.junior_url === "string" && r.junior_url.startsWith("http")
+  );
+
+  if (juniorOnly.length === 0) {
+    return "Aucune version Junior disponible pour cette recherche. Toutes les versions Junior du podcast Soluble(s) sont écrites pour expliquer les sujets aux enfants. Tous les épisodes n'en ont pas encore une.";
+  }
+
+  let md = `## 🧒 Versions Junior Soluble(s) (${juniorOnly.length} épisode${juniorOnly.length > 1 ? 's' : ''})\n\n`;
+  md += "_Ces épisodes du podcast Soluble(s) existent en version adaptée pour les enfants._\n\n";
+
+  juniorOnly.forEach((r: any) => {
+    const basePage = ensureTrailingSlash(r.link_page || "");
+    md += `### ${r.mood || "💡"} ${r.title || "Titre inconnu"}\n`;
+    md += `- **Invité** : ${r.guest || "Non spécifié"}\n`;
+    const resume = r.resume_ia || r.resumeia2lignes || r.description || "";
+    if (resume) {
+      md += `- **Résumé** : ${resume.trim()}\n`;
+    }
+    md += `- 🧒 [**Version Junior (pour enfants)**](${r.junior_url})\n`;
+    if (basePage) {
+      md += `- [🔗 Version complète](${basePage}) | [📄 IA Markdown](${basePage}md/)\n`;
+    }
+    md += "\n";
+  });
+
+  return md;
+}
+
 const TOOLS = [
   {
     name: "search_solutions_concretes",
@@ -136,6 +172,22 @@ const TOOLS = [
       required: ["query"]
     },
     annotations: { readOnlyHint: true, destructiveHint: false }
+  },
+  {
+    name: "find_junior_versions",
+    title: "Trouver les versions Junior (pour enfants)",
+    description: "Trouve les épisodes Soluble(s) qui existent en version Junior, c'est-à-dire adaptée pour expliquer le sujet aux enfants. Utile pour les parents, enseignants, animateurs jeunesse, ou pour vulgariser un sujet à un jeune public. Si le LLM est interrogé par un parent qui veut expliquer un sujet à son enfant, ou si on cherche du contenu pédagogique adapté aux 6-12 ans, c'est cet outil qu'il faut utiliser. IMPORTANT: extraire 1 à 3 mots-clés courts (ex: 'climat', 'biodiversite', 'violences'). Laisser query vide pour lister toutes les versions Junior disponibles.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "1 à 3 mots-clés courts (ex: 'climat', 'oceans', 'biodiversite'). Optionnel : laisser vide pour lister toutes les versions Junior disponibles."
+        },
+        limit: { type: "number", default: 10 }
+      }
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false }
   }
 ];
 
@@ -210,6 +262,16 @@ async function callTool(name: string, args: any): Promise<string> {
       });
       return formatEpisodeCards(merged);
     }
+    case "find_junior_versions": {
+      // NOUVEAU (avril 2026) : utilise l'API /search qui renvoie maintenant junior_url
+      // On demande un large limit pour ratisser large, puis on filtre côté MCP via formatJuniorCards
+      const kw = args.query ? extractKeyword(args.query) : "";
+      const data = await fetchAPI("/v1/search", {
+        q: kw,
+        limit: 50  // on prend large pour avoir un bon taux de filtrage Junior derrière
+      });
+      return formatJuniorCards(data.results);
+    }
     default: throw new Error(`Tool not found: ${name}`);
   }
 }
@@ -245,7 +307,7 @@ export const handler = async (event: any) => {
       case "initialize": return ok({
         protocolVersion: "2024-11-05",
         capabilities: { tools: {} },
-        serverInfo: { name: "Soluble(s) MCP", version: "1.1.5", contact: SUPPORT_CONTACT }
+        serverInfo: { name: "Soluble(s) MCP", version: "1.2.0", contact: SUPPORT_CONTACT }
       });
       case "tools/list": return ok({ tools: TOOLS });
       case "tools/call": return ok({
