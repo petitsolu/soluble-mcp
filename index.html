@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Soluble(s) | Connecteur IA Officiel (MCP)</title>
+  <meta name="description" content="Connectez Soluble(s) à votre IA (Claude, Cursor, Windsurf). 115+ épisodes de journalisme de solutions, dont 97+ versions Junior pour enfants. Serveur MCP officiel.">
   <style>
     :root {
       --bg-color: #FDFBF7;
@@ -13,6 +14,8 @@
       --border-color: #121212;
       --beige: #F5EFE6;
       --green: #00E676;
+      --junior: #0891b2;
+      --junior-bg: #ecfeff;
     }
 
     body {
@@ -35,7 +38,8 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
+      margin-right: 8px;
       padding: 5px 12px;
       background: white;
       border: 2px solid var(--border-color);
@@ -43,6 +47,16 @@
       font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
+    }
+    .status-badge.version-badge {
+      background: var(--brand-red);
+      color: white;
+      border-color: var(--border-color);
+    }
+    .status-badge.junior-badge {
+      background: var(--junior-bg);
+      color: var(--junior);
+      border-color: var(--junior);
     }
     .dot {
       height: 8px;
@@ -108,6 +122,14 @@
       background: #E8F5E9;
     }
 
+    .info-box.junior {
+      background: var(--junior-bg);
+      border-color: var(--junior);
+      border-width: 3px;
+      box-shadow: 6px 6px 0 var(--junior);
+    }
+    .info-box.junior strong { color: var(--junior); }
+
     pre {
       background: #121212;
       color: #FDFBF7;
@@ -123,25 +145,65 @@
     h2 { text-transform: uppercase; font-weight: 900; border-bottom: 3px solid var(--text-color); display: inline-block; padding-bottom: 5px; margin-top: 40px; }
     h3 { font-weight: 800; margin-bottom: 10px; }
 
+    .tools-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 20px; }
+    .tool-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      background: white;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 3px 3px 0 var(--border-color);
+    }
+    .tool-row.junior-row {
+      background: var(--junior-bg);
+      border-color: var(--junior);
+      box-shadow: 3px 3px 0 var(--junior);
+    }
+    .tool-name {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      color: var(--brand-red);
+    }
+    .tool-row.junior-row .tool-name { color: var(--junior); }
+    .tool-desc { font-size: 0.9rem; color: #333; }
+
     footer { margin-top: 60px; border-top: 2px solid var(--border-color); padding-top: 20px; font-size: 0.85rem; font-weight: 600; }
+
+    @media(max-width: 600px) {
+      .pilier-title { font-size: 1.8rem; }
+      .tool-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
   <header class="header-pilier">
-    <div class="status-badge">
-      <span class="dot"></span> Serveur MCP Opérationnel
+    <div>
+      <div class="status-badge">
+        <span class="dot"></span> Serveur MCP Opérationnel
+      </div>
+      <div class="status-badge version-badge">v1.2.0 — avril 2026</div>
+      <div class="status-badge junior-badge">🧒 97+ versions Junior</div>
     </div>
     <div class="header-kicker">Intelligence Artificielle • Journalisme de solutions</div>
     <h1 class="pilier-title">Connectez Soluble(s) à votre IA</h1>
     <p class="pilier-subtitle">
-      Utilisez directement notre base de solutions concrètes et nos épisodes de podcast depuis vos outils d'IA préférés.
+      Utilisez directement notre base de solutions concrètes et nos épisodes de podcast depuis vos outils d'IA préférés. Y compris les <strong>versions Junior pour enfants (6-12 ans)</strong> — idéal pour parents et enseignants.
     </p>
   </header>
 
   <div class="info-box submitted">
     <strong>✅ Soumis au répertoire officiel Anthropic (mars 2026).</strong> Ce connecteur est déjà utilisable dès maintenant dans Claude Desktop, Cursor et Claude Code. La validation au répertoire Claude.ai est en cours.
+  </div>
+
+  <div class="info-box junior">
+    <strong>🧒 Nouveauté avril 2026 — Versions Junior accessibles via IA.</strong>
+    Le nouvel outil <code style="background:#fff; padding:2px 6px; border-radius:4px; border:1px solid var(--junior);">find_junior_versions</code> permet aux parents, enseignants et animateurs de trouver les épisodes adaptés aux enfants. Demandez par exemple à Claude : <em>« Quels épisodes Soluble(s) Junior existent sur le climat pour ma classe de CM2 ? »</em>
   </div>
 
   <section class="stat-item">
@@ -188,6 +250,41 @@
       <button class="card-btn" onclick="copyContent('json-claudecode', this)">Copier la commande</button>
     </div>
 
+  </section>
+
+  <section>
+    <h2>🔧 Outils disponibles</h2>
+    <p>7 outils MCP pour interroger les 115+ épisodes de Soluble(s) :</p>
+    <div class="tools-grid">
+      <div class="tool-row">
+        <span class="tool-name">find_solutions_for_need</span>
+        <span class="tool-desc">Trouver des solutions pour un besoin ou une question.</span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-name">search_solutions_concretes</span>
+        <span class="tool-desc">Rechercher par mots-clés (titres, transcriptions).</span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-name">get_latest_solutions</span>
+        <span class="tool-desc">Les derniers épisodes publiés (ordre anté-chronologique).</span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-name">recommend_solutions</span>
+        <span class="tool-desc">Recommander selon un contexte (parent, prof, militant…).</span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-name">get_concrete_actions</span>
+        <span class="tool-desc">Extraire la liste d'actions concrètes au format checklist.</span>
+      </div>
+      <div class="tool-row">
+        <span class="tool-name">search_across_apis</span>
+        <span class="tool-desc">Recherche globale combinant titres, actions et besoins.</span>
+      </div>
+      <div class="tool-row junior-row">
+        <span class="tool-name">🧒 find_junior_versions</span>
+        <span class="tool-desc"><strong>Nouveau !</strong> Trouver les épisodes en version Junior pour enfants (6-12 ans).</span>
+      </div>
+    </div>
   </section>
 
   <section style="margin-top: 60px; border-top: 2px solid var(--border-color); padding-top: 30px;">
