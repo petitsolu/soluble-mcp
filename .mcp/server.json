@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.petitsolu/solubles",
+  "title": "Soluble(s) — Podcast de journalisme de solutions",
+  "description": "Podcast français de journalisme de solutions sur l'écologie, le climat, les sujets de société et la vie quotidienne. Recherche sémantique, transcriptions Markdown, triptyques structurés, versions junior (6-12 ans), export CSV. — French solutions journalism podcast covering ecology, climate, social issues and everyday life. Semantic search, Markdown transcripts, structured triplets, junior versions (ages 6-12), CSV export.",
+  "version": "1.2.0",
+  "websiteUrl": "https://csoluble.media",
+  "repository": {
+    "url": "https://github.com/petitsolu/soluble-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.csoluble.media/api/mcp"
+    }
+  ]
+}
