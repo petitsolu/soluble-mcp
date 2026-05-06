@@ -53,7 +53,7 @@ function formatEpisodeCards(results: any[]) {
   return md;
 }
 
-// NOUVEAU (avril 2026) : formateur dédié aux versions Junior
+// formateur dédié aux versions Junior
 function formatJuniorCards(results: any[]) {
   if (!results || results.length === 0) {
     return "Aucun résultat trouvé.";
@@ -263,13 +263,9 @@ async function callTool(name: string, args: any): Promise<string> {
       return formatEpisodeCards(merged);
     }
     case "find_junior_versions": {
-      // NOUVEAU (avril 2026) : utilise l'API /search qui renvoie maintenant junior_url
-      // On demande un large limit pour ratisser large, puis on filtre côté MCP via formatJuniorCards
+      // FIX (mai 2026) : endpoint dédié /junior — retourne les 98 épisodes sans plafond artificiel
       const kw = args.query ? extractKeyword(args.query) : "";
-      const data = await fetchAPI("/v1/search", {
-        q: kw,
-        limit: 50  // on prend large pour avoir un bon taux de filtrage Junior derrière
-      });
+      const data = await fetchAPI("/v1/junior", { q: kw });
       return formatJuniorCards(data.results);
     }
     default: throw new Error(`Tool not found: ${name}`);
@@ -307,7 +303,7 @@ export const handler = async (event: any) => {
       case "initialize": return ok({
         protocolVersion: "2024-11-05",
         capabilities: { tools: {} },
-        serverInfo: { name: "Soluble(s) MCP", version: "1.2.0", contact: SUPPORT_CONTACT }
+        serverInfo: { name: "Soluble(s) MCP", version: "1.3.0", contact: SUPPORT_CONTACT }
       });
       case "tools/list": return ok({ tools: TOOLS });
       case "tools/call": return ok({
